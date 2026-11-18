@@ -1,7 +1,10 @@
 package com.laksh.StudentManagement.Service;
 
+import com.laksh.StudentManagement.DTO.request.StudentCreateRequestDto;
+import com.laksh.StudentManagement.DTO.response.StudentCreateResponseDto;
 import com.laksh.StudentManagement.Entity.Role;
 import com.laksh.StudentManagement.Entity.User;
+import com.laksh.StudentManagement.Mapper.StudentMapper;
 import com.laksh.StudentManagement.Repository.RoleRepo;
 import com.laksh.StudentManagement.Repository.UserRepo;
 import org.springframework.stereotype.Service;
@@ -13,28 +16,40 @@ public class UserService {
 
     final private UserRepo userRepo;
     final private RoleRepo roleRepo;
+    final private StudentMapper mapper;
 
-    public UserService(UserRepo userRepo, RoleRepo roleRepo) {
+    public UserService(UserRepo userRepo, RoleRepo roleRepo, StudentMapper mapper) {
         this.userRepo = userRepo;
         this.roleRepo = roleRepo;
+        this.mapper = mapper;
     }
 
-    public List<User> getUsers(){
-        return userRepo.findAll();
+    public List<StudentCreateResponseDto> getUsers(){
+        return userRepo.findAll()
+                .stream()
+                .map(mapper::toDto)
+                .toList();
     }
 
-    public User createUser(User user) {
+    public StudentCreateResponseDto createUser(StudentCreateRequestDto studentRequestDto) {
+
+        User user = mapper.toEntity(studentRequestDto);
 
         Role defaultRole = roleRepo.findByRole("ROLE_USER")
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
         user.setRoles(List.of(defaultRole));
 
-        return userRepo.save(user);
+        User savedUser = userRepo.save(user);
+
+        return mapper.toDto(savedUser);
     }
 
-    public User updateUser(User user){
-        return userRepo.save(user);
+    public StudentCreateResponseDto updateUser(StudentCreateRequestDto studentCreateRequestDto) {
+        User user = mapper.toEntity(studentCreateRequestDto);
+        User savedUser = userRepo.save(user);
+
+        return mapper.toDto(savedUser);
     }
 
     public void deleteUser(Long id){
